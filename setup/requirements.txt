@@ -28,8 +28,8 @@ proxmoxer==2.2.0
 pycparser==2.23
 Pygments==2.19.2
 pymdown-extensions==10.16.1
-PyNaCl>=1.6.2
-pynetbox==7.5.0
+PyNaCl==1.6.2
+pynetbox==7.6.1
 python-dateutil==2.9.0.post0
 PyYAML==6.0.3
 pyyaml_env_tag==1.1
