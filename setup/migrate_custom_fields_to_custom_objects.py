@@ -14,10 +14,10 @@ import requests.exceptions
 
 
 class NetBoxAPI:
-    def __init__(self, http_proto: str, netbox_host: str, netbox_port: str, netbox_api_token: str):
+    def __init__(self, cfg_data: dict):
         try:
-            nb_url = f"{http_proto}://{netbox_host}:{netbox_port}"
-            nb_conn = pynetbox.api(url=nb_url, token=netbox_api_token)
+            nb_url = f"{cfg_data['netbox_http_proto']}://{cfg_data['netbox_host']}:{cfg_data['netbox_port']}"
+            nb_conn = pynetbox.api(url=nb_url, token=cfg_data['netbox_api_token'])
             self.nb_conn = nb_conn
 
             self.nb_conn.http_session.verify = False
@@ -34,8 +34,8 @@ class NetBoxAPI:
 
 
 class NetBoxVirtualMachines(NetBoxAPI):
-    def __init__(self, http_proto: str, netbox_host: str, netbox_port: str, netbox_api_token: str):
-        super().__init__(http_proto, netbox_host, netbox_port, netbox_api_token)
+    def __init__(self, cfg_data: dict):
+        super().__init__(cfg_data)
 
         self.collected_vms = {}
         self.collected_lxc = {}
@@ -70,8 +70,8 @@ class NetBoxVirtualMachines(NetBoxAPI):
 
     
 class NetBoxVirtualMachinesCustomObjects(NetBoxAPI):
-    def __init__(self, http_proto: str, netbox_host: str, netbox_port: str, netbox_api_token: str):
-        super().__init__(http_proto, netbox_host, netbox_port, netbox_api_token)
+    def __init__(self, cfg_data: dict):
+        super().__init__(cfg_data)
 
 
     def create_nb_vm_co(self, payload: dict):
@@ -80,8 +80,8 @@ class NetBoxVirtualMachinesCustomObjects(NetBoxAPI):
 
 
 class NetBoxCustomObjectsAndFields(NetBoxAPI):
-    def __init__(self, http_proto: str, netbox_host: str, netbox_port: str, netbox_api_token: str):
-        super().__init__(http_proto, netbox_host, netbox_port, netbox_api_token)
+    def __init__(self, cfg_data: dict):
+        super().__init__(cfg_data)
 
         self.co_id_mappings = {}
         self.__collect_nb_custom_objects()
@@ -123,16 +123,16 @@ def main():
     with open(netbox_cfg) as nb_f:
         nb_f = yaml.safe_load(nb_f)
 
-    #print(nb_f)
+    print(nb_f)
 
-    nb_obj = NetBoxAPI(nb_f['netbox_http_proto'], nb_f['netbox_host'], nb_f['netbox_port'], nb_f['netbox_api_token'])
+    nb_obj = NetBoxAPI(nb_f)
 
-    nb_vm_obj = NetBoxVirtualMachines(nb_f['netbox_http_proto'], nb_f['netbox_host'], nb_f['netbox_port'], nb_f['netbox_api_token'])
+    nb_vm_obj = NetBoxVirtualMachines(nb_f)
 
     print(f"HEY {nb_vm_obj.collected_vms}")
 
     for collected_vm in nb_vm_obj.collected_vms:
-        nb_migrate_vm_co = NetBoxVirtualMachinesCustomObjects(nb_f['netbox_http_proto'], nb_f['netbox_host'], nb_f['netbox_port'], nb_f['netbox_api_token'])
+        nb_migrate_vm_co = NetBoxVirtualMachinesCustomObjects(nb_f)
         nb_migrate_vm_co.create_nb_vm_co(nb_vm_obj.collected_vms[collected_vm])
 
     sys.exit(0)
