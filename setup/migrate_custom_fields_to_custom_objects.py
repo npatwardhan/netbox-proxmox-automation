@@ -73,10 +73,21 @@ class NetBoxVirtualMachinesCustomObjects(NetBoxAPI):
     def __init__(self, cfg_data: dict):
         super().__init__(cfg_data)
 
+        self.existing_vm_co = {}
+        self.__get_existing_nb_vmco()
 
-    def create_nb_vm_co(self, payload: dict):
-        nb_obj = self.nb_conn.plugins.custom_objects.proxmox_vms.create(**payload)
-        return dict(nb_obj)['id']
+
+    def __get_existing_nb_vmco(self):
+        for existing_co_vm in list(self.nb_conn.plugins.custom_objects.proxmox_vms.all()):
+            self.existing_vm_co[dict(existing_co_vm)['display']] = dict(existing_co_vm)['proxmox_vmid']
+    
+
+    def create_nb_vm_co(self, vm_name: str, payload: dict):
+        if not vm_name in self.existing_vm_co:
+            nb_obj = self.nb_conn.plugins.custom_objects.proxmox_vms.create(**payload)
+            self.existing_vm_co[dict(nb_obj)['display']] = dict(nb_obj)['proxmox_vmid']
+
+        return self.existing_vm_co[vm_name]
 
 
 class NetBoxCustomObjectsAndFields(NetBoxAPI):
@@ -123,17 +134,11 @@ def main():
     with open(netbox_cfg) as nb_f:
         nb_f = yaml.safe_load(nb_f)
 
-    print(nb_f)
-
-    nb_obj = NetBoxAPI(nb_f)
-
     nb_vm_obj = NetBoxVirtualMachines(nb_f)
-
-    print(f"HEY {nb_vm_obj.collected_vms}")
 
     for collected_vm in nb_vm_obj.collected_vms:
         nb_migrate_vm_co = NetBoxVirtualMachinesCustomObjects(nb_f)
-        nb_migrate_vm_co.create_nb_vm_co(nb_vm_obj.collected_vms[collected_vm])
+        nb_migrate_vm_co.create_nb_vm_co(collected_vm, nb_vm_obj.collected_vms[collected_vm])
 
     sys.exit(0)
 
